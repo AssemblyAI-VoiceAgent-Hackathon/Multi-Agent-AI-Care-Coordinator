@@ -1,0 +1,8 @@
+.venv
+__pycache__
+.env
+data/uploads
+data/runs
+.pytest_cache
+*.pdf
+!document-testing-cancer-patient/**/*.pdf

@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "name": "Care Coordinator demo drug dataset",
+    "version": "0.1-demo",
+    "status": "DEMO ONLY - hand-curated, small, not a clinical reference",
+    "replace_with": "A licensed, versioned terminology + interaction source (e.g. RxNorm for names; a licensed DDI dataset such as DrugBank or First Databank for interactions). See PRD section 18 / tech stack 'Medication verification: NEEDS SELECTION'.",
+    "rule": "A medicine not listed here is reported as 'cannot confirm'. An interaction is only reported as found when the pair is listed here. Absence of a pair is NOT evidence of safety."
+  },
+  "drugs": {
+    "aspirin":        {"class": "antiplatelet (NSAID)", "match": ["aspirin"]},
+    "clopidogrel":    {"class": "antiplatelet (P2Y12 inhibitor)", "match": ["clopidogrel", "plavix"]},
+    "prasugrel":      {"class": "antiplatelet (P2Y12 inhibitor)", "match": ["prasugrel", "effient"]},
+    "simvastatin":    {"class": "statin (cholesterol)", "match": ["simvastatin", "zocor"]},
+    "atorvastatin":   {"class": "statin (cholesterol)", "match": ["atorvastatin", "lipitor"]},
+    "metoprolol":     {"class": "beta-blocker", "match": ["metoprolol"]},
+    "propranolol":    {"class": "beta-blocker", "match": ["propranolol"]},
+    "lisinopril":     {"class": "ACE inhibitor (blood pressure)", "match": ["lisinopril"]},
+    "nitroglycerin":  {"class": "nitrate (chest pain relief)", "match": ["nitroglycerin"]},
+    "insulin":        {"class": "insulin (diabetes)", "match": ["insulin", "humulin"]},
+    "acetaminophen":  {"class": "pain reliever", "match": ["acetaminophen", "tylenol", "paracetamol"]},
+    "alendronate":    {"class": "bisphosphonate (bone health)", "match": ["alendron"]},
+    "naproxen":       {"class": "NSAID (pain reliever)", "match": ["naproxen"]},
+    "metformin":      {"class": "biguanide (diabetes)", "match": ["metformin"]},
+    "amlodipine":     {"class": "calcium channel blocker", "match": ["amlodipine"]},
+    "hydrochlorothiazide": {"class": "diuretic", "match": ["hydrochlorothiazide"]}
+  },
+  "interactions": [
+    {"pair": ["clopidogrel", "prasugrel"], "severity": "major",
+     "description": "Both are P2Y12 antiplatelet medicines. Taking both is usually a duplication and can raise the risk of bleeding."},
+    {"pair": ["aspirin", "clopidogrel"], "severity": "moderate",
+     "description": "Together they raise the risk of bleeding. Doctors sometimes prescribe this pair on purpose for a set time."},
+    {"pair": ["aspirin", "prasugrel"], "severity": "moderate",
+     "description": "Together they raise the risk of bleeding. Doctors sometimes prescribe this pair on purpose for a set time."},
+    {"pair": ["simvastatin", "atorvastatin"], "severity": "major",
+     "description": "Both are statins for cholesterol. Usually only one statin is used; taking two may raise the risk of muscle problems."},
+    {"pair": ["metoprolol", "propranolol"], "severity": "major",
+     "description": "Both are beta-blockers. Together they may slow the heart rate or lower blood pressure too much."},
+    {"pair": ["insulin", "metoprolol"], "severity": "moderate",
+     "description": "Beta-blockers can hide some warning signs of low blood sugar."},
+    {"pair": ["insulin", "propranolol"], "severity": "moderate",
+     "description": "Beta-blockers can hide some warning signs of low blood sugar."},
+    {"pair": ["lisinopril", "naproxen"], "severity": "moderate",
+     "description": "NSAIDs like naproxen can weaken the blood pressure effect of lisinopril and can affect the kidneys."},
+    {"pair": ["aspirin", "naproxen"], "severity": "moderate",
+     "description": "Two NSAID-type medicines together can raise the risk of stomach bleeding."}
+  ]
+}
