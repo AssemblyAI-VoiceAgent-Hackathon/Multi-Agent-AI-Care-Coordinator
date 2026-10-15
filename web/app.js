@@ -20,7 +20,10 @@ async function init() {
   renderAgents({});
   const cfg = await api("/api/config");
   const b = $("#modeBadge");
-  if (cfg.mode === "llm") { b.textContent = `Model: ${cfg.llm.model} (AMD)`; b.className = "badge llm"; }
+  if (cfg.mode === "llm") {
+    b.textContent = `Model: ${cfg.llm.model} (AMD)`; b.className = "badge llm";
+    $("#modelNote").innerHTML = `<b>AI model:</b> ${esc(cfg.llm.model)}, served on AMD GPUs. The Compiler still checks every statement against the documents.`;
+  }
   else { b.textContent = "AMD model not connected · rules mode"; b.className = "badge rules"; }
   $("#clfNote").textContent = cfg.safety_classifier.configured ? "plus a safety model on the AMD GPU" : "(the safety model is not connected yet)";
   const pts = await api("/api/patients");
@@ -74,13 +77,14 @@ $("#runForm").addEventListener("submit", async (e) => {
     const { run_id } = await api("/api/runs", { method: "POST", body: fd });
     startRun(run_id);
   } catch (ex) { err.textContent = ex.message; err.hidden = false; }
-  finally { $("#startBtn").disabled = false; $("#startBtn").textContent = "Start"; }
+  finally { $("#startBtn").disabled = false; $("#startBtn").textContent = "Prepare my summary"; }
 });
 
 function startRun(id) {
   runId = id;
   history.replaceState(null, "", `#run=${id}`);
   $("#eventLog").innerHTML = ""; $("#emptyState").hidden = true; $("#hardStop").hidden = true; $("#summaryWrap").hidden = true;
+  $("#working").hidden = false;
   if (es) es.close();
   es = new EventSource(`/api/runs/${id}/events`);
   es.onmessage = (m) => {
@@ -90,9 +94,15 @@ function startRun(id) {
   // Poll until the run leaves "running", so the result shows even if the event stream is delayed or buffered.
   const poll = async () => {
     if (runId !== id) return;
-    const run = await api(`/api/runs/${id}`);
+    let run;
+    try { run = await api(`/api/runs/${id}`); }
+    catch {  // e.g. the server restarted and forgot this run: go back to the start form
+      runId = null; history.replaceState(null, "", location.pathname);
+      $("#working").hidden = true; $("#emptyState").hidden = false;
+      return;
+    }
     if (run.status === "running") setTimeout(poll, 800);
-    else { render(run); renderAgents(run.agents); }
+    else { $("#working").hidden = true; render(run); renderAgents(run.agents); }
   };
   poll();
 }
@@ -162,9 +172,10 @@ function render(run) {
   $("#chatLog").scrollTop = 1e6;
   const open = run.status === "awaiting_review";
   for (const el of ["#approveBtn", "#rejectBtn", "#improveForm button", "#improveInput"]) $(el).disabled = !open;
-  const ex = $("#exportLink");
-  ex.hidden = run.status !== "approved";
+  const ex = $("#exportLink"), pdf = $("#pdfLink");
+  ex.hidden = pdf.hidden = run.status !== "approved";
   ex.href = `/api/runs/${run.run_id}/export.txt`;
+  pdf.href = `/api/runs/${run.run_id}/report.pdf`;
 }
 
 function medTable(s, sec) {

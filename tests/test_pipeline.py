@@ -2,9 +2,10 @@
 import asyncio
 from pathlib import Path
 
+import pymupdf
 import pytest
 
-from app import pipeline, safety
+from app import pipeline, report, safety
 from app.agents.compiler import verify
 from app.agents.medication import DrugDB
 from app.context import RunContext
@@ -113,6 +114,14 @@ def test_medication_checks_and_approval_flow():
     assert ctx.run.status == "awaiting_review"
     pipeline.approve(ctx)
     assert ctx.run.status == "approved"
+
+    # the approved summary downloads as a PDF with its citations, disclaimer and source list
+    pdf = report.render_pdf(ctx.run)
+    assert pdf.startswith(b"%PDF")
+    text = "".join(page.get_text() for page in pymupdf.open("pdf", pdf))
+    assert ctx.run.summary.patient_name in text and "not medical advice" in text.lower()
+    assert "Source documents" in text and ctx.run.documents[0].doc_id in text
+    assert "intimate partner" not in text.lower() and "misuses drugs" not in text.lower()  # sensitive history stays redacted
 
 
 # ---------- generic: works for a different (text) cancer patient ----------

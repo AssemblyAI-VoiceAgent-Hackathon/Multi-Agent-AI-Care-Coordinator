@@ -10,11 +10,11 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import pipeline, safety, telemetry
+from . import pipeline, report, safety, telemetry
 from .agents.medication import DrugDB
 from .config import ROOT, settings
 from .context import RunContext
@@ -204,6 +204,16 @@ async def export(run_id: str):
             out.append(f"  - {safety.redact(c.text)}  [sources: {', '.join(c.source_ids) or 'your request'}]")
         out.append("")
     return "\n".join(out)
+
+
+@app.get("/api/runs/{run_id}/report.pdf")
+async def export_pdf(run_id: str):
+    run = _ctx(run_id).run
+    if run.status != "approved" or not run.summary:
+        raise HTTPException(409, "Only an approved summary can be exported.")
+    pdf = await asyncio.to_thread(report.render_pdf, run)
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{report.pdf_filename(run)}"'})
 
 
 @app.get("/api/telemetry")

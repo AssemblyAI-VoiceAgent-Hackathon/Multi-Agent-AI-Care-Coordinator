@@ -24,7 +24,7 @@
     <summary>What is real in this prototype?</summary>
     <ul>
       <li><b>Working now:</b> reading uploaded PDFs, the 6 agents, emergency hard stop, source links for every statement, verification with 2 retries, flags for the clinician, approve / improve / reject.</li>
-      <li><b>Not connected yet:</b> the AI model on the AMD GPU. Until it is connected, the agents run on fixed Python rules. The badge at the top right shows which mode is on.</li>
+      <li id="modelNote"><b>Not connected yet:</b> the AI model on the AMD GPU. Until it is connected, the agents run on fixed Python rules. The badge at the top right shows which mode is on.</li>
       <li><b>GPU numbers</b> are shown only when a real AMD GPU is connected. They are never simulated.</li>
       <li><b>Medicine checks</b> use a small demo drug list, not a licensed clinical database. Anything not on it says "cannot confirm".</li>
       <li><b>All records are synthetic</b> (made with Synthea). No real patient data.</li>
@@ -90,6 +90,11 @@
     <div id="emptyState" class="empty">
       <p>Tell us who you are, what you need, and add the medical documents. Your summary will appear here. Every statement links to the page it came from.</p>
     </div>
+    <div id="working" class="working" role="status" hidden>
+      <span class="spinner" aria-hidden="true"></span>
+      <div><strong>The agents are reading the documents…</strong>
+        <p class="note">This can take a minute with the AI model. Progress shows in the activity log on the right.</p></div>
+    </div>
     <div id="hardStop" class="hardstop" role="alert" hidden></div>
     <div id="summaryWrap" hidden>
       <div class="result-head">
@@ -114,7 +119,8 @@
         <div class="actions">
           <button id="approveBtn" class="approve">Approve</button>
           <button id="rejectBtn" class="reject">Reject</button>
-          <a id="exportLink" class="export" hidden>Download approved summary</a>
+          <a id="pdfLink" class="export primary-link" hidden download>Download PDF report</a>
+          <a id="exportLink" class="export" hidden>Plain text</a>
         </div>
       </div>
     </div>
