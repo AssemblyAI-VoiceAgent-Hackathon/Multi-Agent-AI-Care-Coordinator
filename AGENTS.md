@@ -12,7 +12,7 @@ Full spec: `AMD_ACT_3_updated.pdf`. Honest status of each part: `PROJECT_STATUS.
 | Python | 3.12 | `winget install Python.Python.3.12` | `brew install python@3.12` / `apt install python3.12 python3.12-venv` |
 | Git | any recent | `winget install Git.Git` | preinstalled / `apt install git` |
 | GitHub CLI (for PRs) | any recent | `winget install GitHub.cli` | `brew install gh` / see cli.github.com |
-| Node.js | only if you touch `web/app.js` (for `node --check`) | `winget install OpenJS.NodeJS.LTS` | `brew install node` |
+| Node.js | only if you touch `web/*.js` (for `node --check`) | `winget install OpenJS.NodeJS.LTS` | `brew install node` |
 
 Then:
 
@@ -51,7 +51,7 @@ cp .env.example .env
 ```bash
 .venv/Scripts/python -m pytest -q          # must pass (currently 18 tests)
 .venv/Scripts/python -m eval.run_eval      # optional: pipeline/baseline/emergency report
-node --check web/app.js                    # if you changed the front end
+node --check web/app.js web/admin.js       # if you changed the front end
 ```
 
 ## 4. Map of the code
@@ -68,7 +68,8 @@ node --check web/app.js                    # if you changed the front end
 | `app/llm.py`, `app/config.py`, `app/telemetry.py` | AMD vLLM client, settings, amd-smi | Ishaan |
 | `app/drugdata/demo_drugdb.json` | **Demo** drug data (not clinical) | Mozzam / Askeri |
 | `app/main.py` | FastAPI REST + server-sent events | everyone |
-| `web/` | Dashboard: plain HTML/CSS/JS, no build step | Mozzam / Askeri |
+| `web/` | The only front end: patient dashboard (`/`, `index.html` + `app.js`) and system monitoring (`/admin`, `admin.html` + `admin.js`). Plain HTML/CSS/JS, no build step | Mozzam / Askeri |
+| `web/css/` | Mariam's design: `style.css`, `patient-dashboard.css`, `admin-dashboard.css`. Change the look here. Our additions and fixes go in `care.css` / `care-admin.css` | Mariam |
 | `eval/run_eval.py` | Evaluation harness | Mariam |
 | `tests/` | pytest suite | everyone |
 | `document-testing-cancer-patient/<patient>/` | Synthetic Synthea patients, one folder each | everyone |
