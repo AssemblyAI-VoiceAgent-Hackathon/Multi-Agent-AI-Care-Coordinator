@@ -1,161 +1,567 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Multi-Agent AI Care Coordinator</title>
-<link rel="stylesheet" href="/static/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061225">
+  <title>CareCoordinator | Patient Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Mariam's design (copied unchanged from Frontend/css) + our additions -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/patient-dashboard.css">
+  <link rel="stylesheet" href="/static/css/care.css">
+
+  <script src="/static/app.js" defer></script>
 </head>
-<body>
-<header class="topbar">
-  <div class="brand">
-    <span class="logo" aria-hidden="true">+</span>
-    <div>
-      <h1>Multi-Agent AI Care Coordinator</h1>
-      <p class="sub">Organizes medical records and prepares you for your doctor visit</p>
+
+<body class="patient-app">
+
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+      <a class="brand" href="#home" data-view="home">
+        <span class="brand-icon">✚</span>
+        <span class="brand-copy">
+          <strong>CareCoordinator</strong>
+          <small>AI for Better Health</small>
+        </span>
+      </a>
+
+      <nav class="sidebar-nav" aria-label="Patient navigation">
+        <a href="#home" class="nav-link active" data-view="home" aria-current="page">
+          <span class="nav-icon">⌂</span><span>Home</span>
+        </a>
+        <a href="#documents" class="nav-link" data-view="documents">
+          <span class="nav-icon">▤</span><span>Upload Documents</span>
+        </a>
+        <a href="#summary" class="nav-link" data-view="summary">
+          <span class="nav-icon">▧</span><span>My Summary</span>
+        </a>
+        <a href="#medications" class="nav-link" data-view="medications">
+          <span class="nav-icon">✚</span><span>Medication &amp; Allergy</span>
+          <span class="nav-count" id="navMedCount"></span>
+        </a>
+        <a href="#questions" class="nav-link" data-view="questions">
+          <span class="nav-icon">☷</span><span>Doctor Questions</span>
+          <span class="nav-count" id="navQuestionCount"></span>
+        </a>
+        <a href="#clinician" class="nav-link" data-view="clinician">
+          <span class="nav-icon">⚑</span><span>Clinician Review</span>
+          <span class="nav-count red" id="navFlagCount"></span>
+        </a>
+        <a href="#history" class="nav-link" data-view="history">
+          <span class="nav-icon">◷</span><span>History</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="sidebar-system">
+          <span class="online-dot" id="modeDot"></span>
+          <span id="sidebarMode">Checking system…</span>
+        </div>
+
+        <div class="profile-card">
+          <div class="avatar" id="profileInitials">—</div>
+
+          <div class="profile-copy">
+            <strong id="profileName">No patient yet</strong>
+            <small id="profileRole">Patient / Caregiver</small>
+          </div>
+
+          <button class="icon-button profile-menu-button" id="profileButton"
+                  aria-label="Open menu" aria-expanded="false">⋮</button>
+
+          <div class="profile-menu hidden" id="profileMenu">
+            <a href="#documents" data-view="documents">Start a new request</a>
+            <a href="/admin" id="adminLink">System monitoring (agents &amp; AMD)</a>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+    <div class="app-main">
+
+      <!-- TOP HEADER -->
+      <header class="topbar">
+
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" id="mobileMenu"
+                  aria-label="Open navigation" aria-expanded="false">☰</button>
+          <div>
+            <div class="eyebrow">PATIENT WORKSPACE</div>
+            <h2 id="pageTitle">Home</h2>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <span class="demo-badge" id="modeBadge"><span class="online-dot"></span>Checking…</span>
+
+          <button class="icon-button" id="notificationButton"
+                  aria-label="Notifications" aria-expanded="false">♧<span class="notif-dot hidden" id="notifDot"></span></button>
+
+          <button class="help-button" id="helpButton">? Help</button>
+
+          <div class="notification-panel hidden" id="notificationPanel">
+            <strong>Notifications</strong>
+            <div id="notificationList"><p>No summary yet. Start by uploading documents.</p></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- DISCLAIMER -->
+      <div class="demo-notice">
+        <span class="notice-icon">ⓘ</span>
+        <p>
+          <strong>Synthetic data only</strong> — this tool organizes what is written in the records.
+          It does not diagnose or give medical advice. <strong class="emergency">In an emergency, call your local emergency number.</strong>
+        </p>
+      </div>
+
+      <main class="dashboard-content">
+
+        <div class="hardstop hidden" id="hardStop" role="alert"></div>
+        <p class="form-error hidden" id="formError" role="alert"></p>
+
+        <!-- HOME -->
+        <section class="dashboard-view active" id="home" data-title="Home">
+
+          <div class="welcome-row">
+            <div>
+              <div class="eyebrow">YOUR HEALTH, ORGANIZED</div>
+              <h1 id="welcomeTitle">Hello <span class="wave">👋</span></h1>
+              <p class="muted" id="welcomeSub">Your health information, simplified. Upload documents to begin.</p>
+            </div>
+            <button class="btn btn-primary" type="button" data-view="documents">+ Upload document</button>
+          </div>
+
+          <!-- PROCESSING TRACKER (live from the agents) -->
+          <div class="processing-card">
+            <div class="section-heading">
+              <div>
+                <h3>Document processing</h3>
+                <p class="muted" id="workflowSub">No request yet</p>
+              </div>
+              <span class="status-badge" id="workflowStatus">Waiting</span>
+            </div>
+            <div class="workflow" id="workflow"></div>
+            <div class="working-line hidden" id="working">
+              <span class="spinner"></span>
+              The agents are reading the documents. This can take a minute or two.
+            </div>
+          </div>
+
+          <!-- HOME CARDS -->
+          <div class="home-grid">
+
+            <article class="dashboard-card home-card">
+              <div class="card-icon blue">▤</div>
+              <div class="eyebrow">DOCUMENTS</div>
+              <h3>Medical documents</h3>
+              <p class="muted">Reports, prescriptions, discharge summaries and notes.</p>
+              <div class="stat-row"><strong id="homeDocumentCount">0</strong><span>Documents read</span></div>
+              <button class="btn btn-outline" data-view="documents" type="button">Manage documents →</button>
+            </article>
+
+            <article class="dashboard-card home-card">
+              <div class="card-icon cyan">▧</div>
+              <div class="eyebrow">AI SUMMARY</div>
+              <h3>Your medical summary</h3>
+              <p class="muted">Every statement links to the page it came from.</p>
+              <div class="stat-row"><strong id="homeSummaryStatus">Not started</strong><span id="homeSummarySub">Upload documents first</span></div>
+              <button class="btn btn-outline" data-view="summary" type="button">Open summary →</button>
+            </article>
+
+            <article class="dashboard-card home-card">
+              <div class="card-icon green">✚</div>
+              <div class="eyebrow">SAFETY CHECKLIST</div>
+              <h3>Medication &amp; allergy</h3>
+              <p class="muted">Medicines checked against the drug data, interactions and allergies.</p>
+              <div class="stat-row"><strong id="medicationCheckCount">0/0</strong><span>Medicines reviewed</span></div>
+              <button class="btn btn-outline" data-view="medications" type="button">Open checklist →</button>
+            </article>
+
+            <article class="dashboard-card home-card">
+              <div class="card-icon purple">☷</div>
+              <div class="eyebrow">APPOINTMENT PREPARATION</div>
+              <h3>Questions for your doctor</h3>
+              <p class="muted">Prepared from your records, ready for the appointment.</p>
+              <div class="stat-row"><strong id="homeQuestionCount">0</strong><span>Questions prepared</span></div>
+              <button class="btn btn-outline" data-view="questions" type="button">Prepare questions →</button>
+            </article>
+
+          </div>
+
+          <div class="dashboard-card activity-card">
+            <div class="section-heading">
+              <div>
+                <h3>Recent activity</h3>
+                <p class="muted">Live from the agents.</p>
+              </div>
+              <button class="text-button" data-view="history" type="button">View history →</button>
+            </div>
+            <div id="homeRecentActivity" class="activity-list">
+              <div class="empty-state">No activity recorded yet.</div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- UPLOAD DOCUMENTS -->
+        <section class="dashboard-view" id="documents" data-title="Upload Documents" hidden>
+
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">DOCUMENT MANAGEMENT</div>
+              <h1>Upload Documents</h1>
+              <p class="muted">Tell us who you are and what you need, then add the medical records.</p>
+            </div>
+          </div>
+
+          <div class="documents-layout">
+
+            <form class="dashboard-card upload-card" id="runForm">
+
+              <div class="section-heading">
+                <div>
+                  <h3>1. Who is submitting?</h3>
+                  <p class="muted">So the summary speaks to the right person.</p>
+                </div>
+                <div class="card-icon purple">♙</div>
+              </div>
+              <div class="role-choice">
+                <label><input type="radio" name="role" value="patient" required>
+                  <span><strong>I am the patient</strong><small>The records are mine</small></span></label>
+                <label><input type="radio" name="role" value="caregiver">
+                  <span><strong>I am a caregiver</strong><small>Family member or friend</small></span></label>
+              </div>
+              <div class="field-row">
+                <label>Your name (optional)<input name="name" class="form-control" autocomplete="name"></label>
+                <label id="caregiverFields" class="hidden">Relationship to the patient
+                  <input name="relationship" class="form-control" placeholder="e.g. daughter, husband, friend"></label>
+              </div>
+
+              <div class="section-heading spaced">
+                <div>
+                  <h3>2. What do you need?</h3>
+                  <p class="muted">Pick an example or write your own.</p>
+                </div>
+              </div>
+              <textarea name="request" class="form-control" rows="3" required
+                        placeholder="e.g. Help me prepare for the oncology appointment next week"></textarea>
+              <div class="example-chips" id="examples">
+                <button type="button" class="chip">Help me prepare for the oncology appointment next week</button>
+                <button type="button" class="chip">Explain the discharge papers in simple words</button>
+                <button type="button" class="chip">Check the current medicines for problems</button>
+                <button type="button" class="chip danger" title="Shows the emergency stop">She has chest pain right now, what should we do?</button>
+              </div>
+
+              <div class="section-heading spaced">
+                <div>
+                  <h3>3. Upload medical documents</h3>
+                  <p class="muted">PDF or TXT. Several at once. Maximum 20 MB per file.</p>
+                </div>
+                <div class="card-icon blue">⇧</div>
+              </div>
+
+              <input type="file" id="fileInput" accept=".pdf,.txt,.md" multiple hidden>
+
+              <div class="drop-zone" id="dropZone" role="button" tabindex="0"
+                   aria-label="Choose or drop medical documents">
+                <div class="upload-symbol">⇧</div>
+                <h3>Drag files here or browse</h3>
+                <p class="muted">PDF, TXT · Up to 20 MB per file</p>
+                <button type="button" class="btn btn-primary" id="browseFiles">+ Choose files</button>
+              </div>
+
+              <div class="section-heading subheading">
+                <h3>Selected files</h3>
+                <span class="status-badge info" id="selectedCount">0 files</span>
+              </div>
+              <div id="fileList" class="file-list">
+                <div class="empty-state">Your selected documents will appear here.</div>
+              </div>
+
+              <div class="section-heading subheading spaced">
+                <h3>No documents? Use a synthetic sample patient</h3>
+              </div>
+              <div class="file-list" id="patientPicks"></div>
+              <input type="hidden" name="patient_id" id="patientId">
+
+              <div class="upload-footer">
+                <span class="muted">Emergency words in the request stop the system (<span id="clfNote">keyword list</span>).</span>
+                <button class="btn btn-primary" type="submit" id="startBtn">Prepare my summary →</button>
+              </div>
+            </form>
+
+            <div class="dashboard-card">
+              <div class="section-heading">
+                <div>
+                  <h3>Documents in this summary</h3>
+                  <p class="muted">Numbered so every statement can point to its source.</p>
+                </div>
+              </div>
+              <input type="search" id="documentSearch" class="form-control" placeholder="Search document names...">
+              <div id="recentDocuments" class="recent-documents">
+                <div class="empty-state">No documents read yet.</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- MY SUMMARY -->
+        <section class="dashboard-view" id="summary" data-title="My Summary" hidden>
+
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">HEALTH INFORMATION</div>
+              <h1 id="summaryTitle">My Medical Summary</h1>
+              <p class="muted" id="summaryMeta">Your summary will appear here after the agents read your documents.</p>
+            </div>
+            <span class="status-badge warning" id="summaryStatus">● Not started</span>
+          </div>
+
+          <div class="summary-layout">
+
+            <div class="stack">
+              <article class="dashboard-card">
+                <div class="section-heading">
+                  <div>
+                    <h3>Summary of findings</h3>
+                    <p class="muted">Written in plain words. Click a source tag to see the exact line.</p>
+                  </div>
+                  <span class="conf" id="summaryConf"></span>
+                </div>
+
+                <div class="summary-content" id="summaryContent">
+                  <div class="empty-state">No summary yet.</div>
+                </div>
+
+                <div class="button-row">
+                  <button class="btn btn-outline" id="viewSources" type="button">View sources</button>
+                  <button class="btn btn-outline" id="copySummary" type="button">Copy</button>
+                  <button class="btn btn-danger" id="rejectBtn" type="button">Reject</button>
+                  <button class="btn btn-primary" id="approveBtn" type="button">✓ Approve summary</button>
+                </div>
+
+                <p class="small-note" id="summaryNote">Nothing is final until you approve it. Approving unlocks the PDF report.</p>
+              </article>
+
+              <article class="dashboard-card">
+                <div class="section-heading">
+                  <div>
+                    <h3>Ask for a change</h3>
+                    <p class="muted">The care coordinator updates the summary and re-checks every statement.</p>
+                  </div>
+                </div>
+                <div class="chatlog" id="chatLog"></div>
+                <form class="improve-row" id="improveForm">
+                  <input id="improveInput" class="form-control" placeholder="e.g. make it simpler, or add a question about my allergy history">
+                  <button class="btn btn-outline" type="submit">Improve</button>
+                </form>
+              </article>
+            </div>
+
+            <aside class="stack">
+              <div class="dashboard-card">
+                <div class="card-icon purple">ⓘ</div>
+                <h3>Review carefully</h3>
+                <p class="muted">Confirm all findings against the original records with your care team.</p>
+
+                <div class="review-item">
+                  <span class="review-dot green"></span>
+                  <div><strong>Source labels</strong><small id="reviewSources">Every statement links to its source line.</small></div>
+                </div>
+                <div class="review-item">
+                  <span class="review-dot yellow"></span>
+                  <div><strong>Uncertainty</strong><small id="reviewUncertain">Unknown medicines stay "cannot confirm".</small></div>
+                </div>
+                <div class="review-item">
+                  <span class="review-dot cyan"></span>
+                  <div><strong>Reading level</strong><small id="reviewGrade">—</small></div>
+                </div>
+
+                <a class="btn btn-primary full-width hidden" id="pdfLink" download>⇩ Download PDF report</a>
+                <a class="btn btn-outline full-width hidden" id="exportLink">Plain text version</a>
+                <button class="btn btn-outline full-width" type="button" id="fullReport" disabled>View full report →</button>
+              </div>
+
+              <details class="dashboard-card" open>
+                <summary><h3>Timeline</h3></summary>
+                <ol class="timeline" id="timeline"><li class="muted">No dated events yet.</li></ol>
+              </details>
+            </aside>
+
+          </div>
+        </section>
+
+        <!-- MEDICATION & ALLERGY -->
+        <section class="dashboard-view" id="medications" data-title="Medication & Allergy" hidden>
+
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">SAFETY CHECKLIST</div>
+              <h1>Medication &amp; Allergy</h1>
+              <p class="muted">Medicines from your records, checked against the drug data.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="section-heading">
+              <div>
+                <h3>Review checklist</h3>
+                <p class="muted">Tick each medicine after confirming it with your doctor or pharmacist.</p>
+              </div>
+              <span class="status-badge info" id="medicationProgress">0 of 0 reviewed</span>
+            </div>
+            <div id="medicationList"><div class="empty-state">No medicines yet.</div></div>
+          </div>
+
+          <div class="question-layout spaced-top">
+            <div class="dashboard-card">
+              <div class="section-heading"><h3>Possible interactions</h3></div>
+              <div id="interactionList"><div class="empty-state">Nothing checked yet.</div></div>
+            </div>
+            <div class="dashboard-card">
+              <div class="section-heading"><h3>Allergies</h3></div>
+              <div id="allergyList"><div class="empty-state">Nothing checked yet.</div></div>
+            </div>
+          </div>
+
+          <div class="notice-inline">
+            Do not change or stop any medicine based on this checklist. The drug data is a small demo list,
+            not a licensed clinical database; anything not on it says "cannot confirm".
+          </div>
+        </section>
+
+        <!-- DOCTOR QUESTIONS -->
+        <section class="dashboard-view" id="questions" data-title="Doctor Questions" hidden>
+
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">APPOINTMENT PREPARATION</div>
+              <h1>Doctor Questions</h1>
+              <p class="muted">Questions prepared from your records. Tick them off at the appointment.</p>
+            </div>
+          </div>
+
+          <div class="question-layout">
+
+            <div class="dashboard-card">
+              <h3>Add a question</h3>
+              <p class="muted">The care coordinator adds it to your summary and links it to your records where it can.</p>
+              <form id="questionForm">
+                <label for="questionInput">Your question is about…</label>
+                <textarea id="questionInput" class="form-control" rows="4" maxlength="500" required
+                          placeholder="e.g. my allergy history"></textarea>
+                <button class="btn btn-primary" type="submit">+ Add question</button>
+              </form>
+              <div class="answer-box hidden" id="questionAnswer"></div>
+            </div>
+
+            <div class="dashboard-card">
+              <div class="section-heading">
+                <h3>My question list</h3>
+                <span class="status-badge info" id="questionCount">0 questions</span>
+              </div>
+              <div id="questionList" class="question-list">
+                <div class="empty-state">Your questions will appear here.</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- CLINICIAN REVIEW -->
+        <section class="dashboard-view" id="clinician" data-title="Clinician Review" hidden>
+
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">FOR THE DOCTOR</div>
+              <h1>Clinician Review</h1>
+              <p class="muted" id="clinicianSub">Items the agents flagged for a clinician to look at.</p>
+            </div>
+          </div>
+
+          <div class="home-grid four">
+            <div class="dashboard-card stat-card red"><strong id="redCount">0</strong><span>Need attention</span></div>
+            <div class="dashboard-card stat-card amber"><strong id="amberCount">0</strong><span>To check</span></div>
+            <div class="dashboard-card stat-card"><strong id="clinDocCount">0</strong><span>Documents</span></div>
+            <div class="dashboard-card stat-card"><strong id="clinMedCount">0</strong><span>Medicines</span></div>
+          </div>
+
+          <div class="dashboard-card spaced-top">
+            <div class="section-heading">
+              <div><h3>Needs attention</h3><p class="muted">Highest priority</p></div>
+              <span class="status-badge error" id="redBadge">0</span>
+            </div>
+            <div id="redList"><div class="empty-state">Nothing flagged.</div></div>
+          </div>
+
+          <div class="dashboard-card spaced-top">
+            <div class="section-heading">
+              <div><h3>To check</h3><p class="muted">Lower priority, but worth confirming</p></div>
+              <span class="status-badge warning" id="amberBadge">0</span>
+            </div>
+            <div id="amberList"><div class="empty-state">Nothing flagged.</div></div>
+          </div>
+
+          <div class="notice-inline">Sensitive history stays redacted: it is flagged here for a private conversation, never repeated in the summary.</div>
+        </section>
+
+        <!-- HISTORY -->
+        <section class="dashboard-view" id="history" data-title="History" hidden>
+
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">ACTIVITY RECORD</div>
+              <h1>History</h1>
+              <p class="muted">Every step the agents took on this request.</p>
+            </div>
+            <a class="btn btn-outline" href="/admin" id="adminLink2">System monitoring →</a>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="section-heading">
+              <h3>Recent activity</h3>
+              <span class="status-badge info" id="historyCount">0 events</span>
+            </div>
+            <div id="historyList" class="activity-list">
+              <div class="empty-state">No activity recorded yet.</div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="app-footer">
+        <span>CareCoordinator · Multi-Agent AI Care Coordinator</span>
+        <span>Synthetic data · Not for clinical use</span>
+      </footer>
+
     </div>
   </div>
-  <div id="modeBadge" class="badge">checking…</div>
-</header>
-<div class="disclaimer" role="note">
-  Synthetic data only. This tool organizes what is written in the records. It does not diagnose or give medical advice.
-  <strong>In an emergency, call your local emergency number.</strong>
-  <details class="honest">
-    <summary>What is real in this prototype?</summary>
-    <ul>
-      <li><b>Working now:</b> reading uploaded PDFs, the 6 agents, emergency hard stop, source links for every statement, verification with 2 retries, flags for the clinician, approve / improve / reject.</li>
-      <li id="modelNote"><b>Not connected yet:</b> the AI model on the AMD GPU. Until it is connected, the agents run on fixed Python rules. The badge at the top right shows which mode is on.</li>
-      <li><b>GPU numbers</b> are shown only when a real AMD GPU is connected. They are never simulated.</li>
-      <li><b>Medicine checks</b> use a small demo drug list, not a licensed clinical database. Anything not on it says "cannot confirm".</li>
-      <li><b>All records are synthetic</b> (made with Synthea). No real patient data.</li>
-    </ul>
-  </details>
-</div>
 
-<main class="layout">
-  <!-- ========== left: intake form ========== -->
-  <section class="panel" id="intake">
-    <h2>Start here</h2>
-    <form id="runForm">
-      <fieldset>
-        <legend>1. Who is submitting?</legend>
-        <div class="seg">
-          <label><input type="radio" name="role" value="patient" required> I am the patient</label>
-          <label><input type="radio" name="role" value="caregiver"> I am a caregiver</label>
-        </div>
-        <div id="caregiverFields" hidden>
-          <label>Relationship to the patient <input name="relationship" placeholder="e.g. daughter, husband, friend"></label>
-        </div>
-        <label>Your name (optional) <input name="name" autocomplete="name"></label>
-      </fieldset>
+  <!-- REUSABLE DETAILS DIALOG (sources, help) -->
+  <dialog id="detailDialog" class="detail-dialog">
+    <div class="dialog-header">
+      <h2 id="dialogTitle">Details</h2>
+      <button type="button" class="icon-button" id="closeDialog" aria-label="Close dialog">×</button>
+    </div>
+    <div id="dialogContent" class="dialog-content"></div>
+  </dialog>
 
-      <fieldset>
-        <legend>2. What do you need?</legend>
-        <textarea name="request" rows="3" required placeholder="e.g. Help me prepare for the oncology appointment next week"></textarea>
-        <div class="chips" id="examples">
-          <button type="button" class="chip">Help me prepare for the oncology appointment next week</button>
-          <button type="button" class="chip">Explain the discharge papers in simple words</button>
-          <button type="button" class="chip">Check the current medicines for problems</button>
-          <button type="button" class="chip danger">She has chest pain right now, what should we do?</button>
-        </div>
-      </fieldset>
+  <!-- TOAST MESSAGES -->
+  <div id="appToast" class="app-toast hidden" role="status" aria-live="polite"></div>
 
-      <fieldset>
-        <legend>3. Upload medical documents</legend>
-        <label class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md" hidden>
-          <strong>Drop PDFs here</strong> or <u>choose files</u>
-          <span class="fine">Discharge summaries, lab reports, medicine lists, scans, notes. Several at once. PDF or text, up to 20 MB each.</span>
-        </label>
-        <ul id="fileList" class="filelist"></ul>
-        <details class="sample">
-          <summary>No documents? Try a synthetic sample patient</summary>
-          <select name="patient_id" id="patientSelect"><option value="">— choose —</option></select>
-        </details>
-      </fieldset>
-      <p id="formError" class="error" role="alert" hidden></p>
-      <button type="submit" class="primary" id="startBtn">Prepare my summary</button>
-      <p class="fine">Emergency words in your request stop the system. The check uses a keyword list
-        <span id="clfNote"></span> and can miss unusual wording.</p>
-    </form>
-
-    <div id="docList" class="doclist" hidden>
-      <h3>Documents</h3>
-      <ol id="docs"></ol>
-    </div>
-  </section>
-
-  <!-- ========== middle: result ========== -->
-  <section class="panel result" id="result">
-    <div id="emptyState" class="empty">
-      <p>Tell us who you are, what you need, and add the medical documents. Your summary will appear here. Every statement links to the page it came from.</p>
-    </div>
-    <div id="working" class="working" role="status" hidden>
-      <span class="spinner" aria-hidden="true"></span>
-      <div><strong>The agents are reading the documents…</strong>
-        <p class="note">This can take a minute with the AI model. Progress shows in the activity log on the right.</p></div>
-    </div>
-    <div id="hardStop" class="hardstop" role="alert" hidden></div>
-    <div id="summaryWrap" hidden>
-      <div class="result-head">
-        <div>
-          <h2 id="patientTitle">Care summary</h2>
-          <p class="meta" id="resultMeta"></p>
-        </div>
-        <span id="statusBadge" class="badge"></span>
-      </div>
-      <div id="sections"></div>
-      <details class="card" id="timelineCard">
-        <summary><h3>Timeline</h3></summary>
-        <ol id="timeline" class="timeline"></ol>
-      </details>
-      <div class="card chat">
-        <h3>Review with the care coordinator</h3>
-        <div id="chatLog" class="chatlog" aria-live="polite"></div>
-        <form id="improveForm" class="improve">
-          <input id="improveInput" placeholder="Ask for a change, e.g. add a question about my allergy history">
-          <button type="submit">Improve</button>
-        </form>
-        <div class="actions">
-          <button id="approveBtn" class="approve">Approve</button>
-          <button id="rejectBtn" class="reject">Reject</button>
-          <a id="pdfLink" class="export primary-link" hidden download>Download PDF report</a>
-          <a id="exportLink" class="export" hidden>Plain text</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== right: live dashboard ========== -->
-  <aside class="panel dash">
-    <h2>How the agents are working</h2>
-    <ul class="agents" id="agents"></ul>
-    <div class="card hw">
-      <h3>AMD GPU</h3>
-      <div id="gpu" class="gpu">—</div>
-    </div>
-    <div class="card hw">
-      <h3>Model</h3>
-      <div id="llmStats" class="gpu">—</div>
-    </div>
-    <div class="card">
-      <h3>Flags</h3>
-      <div class="flagcount"><span class="dot red"></span><b id="redCount">0</b> need attention <span class="dot amber"></span><b id="amberCount">0</b> to check</div>
-    </div>
-    <div class="card">
-      <h3>Activity log</h3>
-      <ol id="eventLog" class="eventlog"></ol>
-    </div>
-  </aside>
-</main>
-
-<dialog id="sourceDlg">
-  <form method="dialog"><button class="close" aria-label="Close">×</button></form>
-  <h3 id="srcTitle"></h3>
-  <p class="meta" id="srcMeta"></p>
-  <ol id="srcLines" class="srclines"></ol>
-</dialog>
-
-<script src="/static/app.js"></script>
 </body>
 </html>

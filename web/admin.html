@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061225">
+  <title>System Monitoring | CareCoordinator</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Mariam's design (copied unchanged from Frontend/css) + our additions -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/admin-dashboard.css">
+  <link rel="stylesheet" href="/static/css/care-admin.css">
+
+  <script src="/static/admin.js" defer></script>
+</head>
+<body class="admin-page">
+
+  <div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="adminSidebar">
+
+      <a class="brand" href="/">
+        <span class="brand-icon">✚</span>
+        <span>
+          <strong>CareCoordinator</strong>
+          <small>AI System Monitoring</small>
+        </span>
+      </a>
+
+      <nav class="sidebar-nav" aria-label="Admin navigation">
+        <button class="nav-link active" data-view="overview"><span>◈</span> Overview</button>
+        <button class="nav-link" data-view="agents"><span>⌘</span> Agent Activity</button>
+        <button class="nav-link" data-view="documents"><span>▤</span> Documents</button>
+        <button class="nav-link" data-view="verification"><span>✓</span> Verification</button>
+        <button class="nav-link" data-view="hardware"><span>▥</span> Hardware &amp; Performance</button>
+        <button class="nav-link" data-view="logs"><span>≡</span> Logs &amp; Errors</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="system-indicator">
+          <span class="online-dot" id="modeDot"></span>
+          <div>
+            <strong id="modeTitle">Checking system…</strong>
+            <small id="modeSub">Live data only, never simulated</small>
+          </div>
+        </div>
+        <a class="back-link" href="/" id="patientLink">← Patient dashboard</a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+      <header class="admin-header">
+        <div class="header-left">
+          <button id="mobileMenu" class="icon-button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+          <div>
+            <h1 id="pageTitle">System Overview</h1>
+            <p id="runLine">Monitor the real agents, verification and AMD hardware.</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span class="demo-badge" id="liveBadge">LIVE DATA</span>
+          <button id="refreshMetrics" class="btn btn-primary">↻ Refresh</button>
+        </div>
+      </header>
+
+      <div class="demo-notice">
+        <strong>ⓘ Live system</strong>
+        Everything on this page comes from the current run and the server. GPU and model numbers appear only when a
+        real AMD GPU and model are connected. They are never simulated.
+      </div>
+
+      <!-- 1. OVERVIEW -->
+      <section class="dashboard-view active" id="overview">
+        <div class="section-heading">
+          <div><h2>System Overview</h2><p>The current run at a glance.</p></div>
+          <span class="status-badge muted" id="systemStatus">No run yet</span>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon blue">▥</span><span class="metric-label">GPU Usage</span></div>
+            <h3 id="overviewGpu">—</h3>
+            <div class="progress-track"><span id="overviewGpuBar" style="width:0%"></span></div>
+            <small id="overviewGpuNote">Not connected</small>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon purple">▤</span><span class="metric-label">Memory Usage</span></div>
+            <h3 id="overviewMemory">—</h3>
+            <div class="progress-track"><span id="overviewMemoryBar" style="width:0%"></span></div>
+            <small id="overviewMemoryNote">Not connected</small>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon cyan">◷</span><span class="metric-label">Response Time</span></div>
+            <h3 id="overviewResponse">—</h3>
+            <div class="progress-track"><span id="overviewResponseBar" style="width:0%"></span></div>
+            <small id="overviewResponseNote">Average model call latency</small>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon green">▰</span><span class="metric-label">Token Speed</span></div>
+            <h3 id="overviewTokens">—</h3>
+            <div class="progress-track"><span id="overviewTokensBar" style="width:0%"></span></div>
+            <small id="overviewTokensNote">Last model call</small>
+          </article>
+        </div>
+
+        <div class="content-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h2>Agent Activity</h2><p>Live agent states</p></div>
+              <button class="text-button" data-view="agents">View all →</button>
+            </div>
+            <div id="overviewAgentList"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h2>Verification Results</h2><p>Statements checked against the records</p></div>
+              <button class="text-button" data-view="verification">View all →</button>
+            </div>
+            <div class="verification-overview">
+              <div class="donut-chart" id="overviewDonut">
+                <div><strong id="overviewVerifiedPercent">—</strong><small>Verified</small></div>
+              </div>
+              <div id="overviewVerificationLegend"></div>
+            </div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div><h2>Recent System Events</h2><p>Latest agent activity</p></div>
+            <button class="text-button" data-view="logs">Open logs →</button>
+          </div>
+          <div id="overviewRecentLogs"></div>
+        </article>
+      </section>
+
+      <!-- 2. AGENT ACTIVITY -->
+      <section class="dashboard-view" id="agents" hidden>
+        <div class="section-heading">
+          <div><h2>Agent Activity</h2><p>Status and job of each agent in the current run.</p></div>
+        </div>
+        <div class="panel">
+          <div class="table-toolbar">
+            <input id="agentSearch" type="search" placeholder="Search agents..." aria-label="Search agents">
+            <label class="sr-only" for="agentStatusFilter">Agent status</label>
+            <select id="agentStatusFilter">
+              <option value="all">All statuses</option>
+              <option value="Working">Working</option>
+              <option value="Completed">Completed</option>
+              <option value="Idle">Idle</option>
+              <option value="Retrying">Retrying</option>
+              <option value="Stopped">Stopped</option>
+            </select>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Agent</th><th>Status</th><th>Job / latest message</th><th>Last active</th></tr></thead>
+              <tbody id="agentTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. DOCUMENTS -->
+      <section class="dashboard-view" id="documents" hidden>
+        <div class="section-heading">
+          <div><h2>Document Monitoring</h2><p>Every document read in the current run.</p></div>
+        </div>
+        <div class="metric-grid compact-grid">
+          <article class="metric-card"><span class="metric-label">Total documents</span><h3 id="documentTotal">0</h3></article>
+          <article class="metric-card"><span class="metric-label">Readable</span><h3 id="documentProcessed">0</h3></article>
+          <article class="metric-card"><span class="metric-label">Cited in summary</span><h3 id="documentReview">0</h3></article>
+          <article class="metric-card"><span class="metric-label">Unreadable</span><h3 id="documentFlagged">0</h3></article>
+        </div>
+        <article class="panel">
+          <div class="table-toolbar">
+            <input id="documentSearch" type="search" placeholder="Search documents..." aria-label="Search documents">
+            <label class="sr-only" for="documentStatusFilter">Document status</label>
+            <select id="documentStatusFilter">
+              <option value="all">All statuses</option>
+              <option value="Cited">Cited</option>
+              <option value="Read">Read</option>
+              <option value="Unreadable">Unreadable</option>
+            </select>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Document ID</th><th>Filename</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="documentTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- 4. VERIFICATION -->
+      <section class="dashboard-view" id="verification" hidden>
+        <div class="section-heading">
+          <div><h2>Verification Results</h2><p>The Compiler checks every statement against its cited source line.</p></div>
+        </div>
+        <div class="content-grid">
+          <article class="panel">
+            <h2>Record Verification</h2>
+            <div class="verification-center">
+              <div class="donut-chart large-donut" id="verificationDonut">
+                <div><strong id="verifiedPercent">—</strong><small>Verified</small></div>
+              </div>
+            </div>
+            <div id="verificationLegend" class="legend-list"></div>
+          </article>
+          <article class="panel">
+            <h2>Confidence Levels</h2>
+            <p>Share of summary sections at each confidence level.</p>
+            <div class="confidence-row"><div><span class="legend-dot green-dot"></span>High</div><strong id="confidenceHighLabel">—</strong></div>
+            <div class="progress-track"><span id="confidenceHighBar" style="width:0%"></span></div>
+            <div class="confidence-row"><div><span class="legend-dot yellow-dot"></span>Medium</div><strong id="confidenceMediumLabel">—</strong></div>
+            <div class="progress-track"><span id="confidenceMediumBar" style="width:0%"></span></div>
+            <div class="confidence-row"><div><span class="legend-dot red-dot"></span>Low</div><strong id="confidenceLowLabel">—</strong></div>
+            <div class="progress-track"><span id="confidenceLowBar" style="width:0%"></span></div>
+          </article>
+        </div>
+        <article class="panel">
+          <h2>Verification Records</h2>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Section</th><th>Statement</th><th>Result</th><th>Sources</th></tr></thead>
+              <tbody id="verificationTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- 5. HARDWARE & PERFORMANCE -->
+      <section class="dashboard-view" id="hardware" hidden>
+        <div class="section-heading">
+          <div><h2>Hardware &amp; Performance</h2><p>Real amd-smi telemetry and model statistics.</p></div>
+          <span class="status-badge muted" id="hardwareBadge">Checking…</span>
+        </div>
+        <div class="metric-grid">
+          <article class="metric-card"><span class="metric-label">GPU utilization</span><h3 id="hardwareGpu">—</h3>
+            <div class="progress-track"><span id="hardwareGpuBar" style="width:0%"></span></div></article>
+          <article class="metric-card"><span class="metric-label">VRAM usage</span><h3 id="hardwareMemory">—</h3>
+            <div class="progress-track"><span id="hardwareMemoryBar" style="width:0%"></span></div></article>
+          <article class="metric-card"><span class="metric-label">Model calls / failures</span><h3 id="hardwareResponse">—</h3></article>
+          <article class="metric-card"><span class="metric-label">Token speed</span><h3 id="hardwareTokens">—</h3></article>
+        </div>
+        <article class="panel">
+          <div class="panel-heading">
+            <div><h2>GPU Utilization History</h2><p id="chartSubtitle">Samples collected while this page is open</p></div>
+          </div>
+          <div class="chart-container">
+            <canvas id="gpuChart" role="img" aria-label="GPU utilization line chart">GPU utilization history.</canvas>
+            <div class="chart-empty hidden" id="chartEmpty"></div>
+          </div>
+          <div class="chart-footer">
+            <span><span class="legend-dot blue-dot"></span>GPU utilization</span>
+            <span id="chartLatest">Latest: —</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- 6. LOGS & ERRORS -->
+      <section class="dashboard-view" id="logs" hidden>
+        <div class="section-heading">
+          <div><h2>Logs &amp; Errors</h2><p>Every event the agents emitted in the current run.</p></div>
+        </div>
+        <article class="panel">
+          <div class="table-toolbar">
+            <input id="logSearch" type="search" placeholder="Search logs..." aria-label="Search logs">
+            <label class="sr-only" for="logLevelFilter">Log level</label>
+            <select id="logLevelFilter">
+              <option value="all">All levels</option>
+              <option value="INFO">Info</option>
+              <option value="WARN">Warning</option>
+              <option value="ERROR">Error</option>
+            </select>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Time</th><th>Level</th><th>Agent · event</th><th>Details</th></tr></thead>
+              <tbody id="logTableBody"></tbody>
+            </table>
+          </div>
+          <div id="logEmptyState" class="empty-state hidden">No matching logs.</div>
+        </article>
+      </section>
+
+      <footer class="dashboard-footer">CareCoordinator · System Monitoring · Synthetic data, not for clinical use.</footer>
+    </main>
+  </div>
+
+  <div id="appToast" class="app-toast hidden" role="status" aria-live="polite"></div>
+</body>
+</html>
