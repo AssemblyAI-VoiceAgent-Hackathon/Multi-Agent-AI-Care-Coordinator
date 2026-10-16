@@ -1,6 +1,6 @@
 # Multi-Agent AI Care Coordinator
 
-AMD Developer Hackathon ACT III · Track 2: Health and Wellbeing · Team: Ishaan, Mariam, Mozzam
+AMD Developer Hackathon ACT III · Track 2: Health and Wellbeing · Team: Ishaan, Mariam, Mozzam/Askeri
 
 The Multi-Agent AI Care Coordinator turns a cancer patient's scattered records (discharge summaries, labs, medicine lists, procedure and imaging reports) into a **source-checked care summary**. It has four fixed sections:
 
