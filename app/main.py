@@ -221,9 +221,24 @@ async def telemetry_endpoint():
     return {"gpu": await telemetry.gpu_metrics(), "llm": llm.stats.as_dict(), "mode": "llm" if llm.enabled else "rules"}
 
 
+NO_CACHE = {"Cache-Control": "no-cache"}  # browsers revalidate, so a changed dashboard shows up on a normal refresh
+
+
 @app.get("/")
 async def index():
-    return FileResponse(STATIC / "index.html")
+    return FileResponse(STATIC / "index.html", headers=NO_CACHE)
 
 
-app.mount("/static", StaticFiles(directory=STATIC), name="static")
+@app.get("/admin")
+async def admin():
+    return FileResponse(STATIC / "admin.html", headers=NO_CACHE)
+
+
+class NoCacheStatic(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        resp.headers.update(NO_CACHE)
+        return resp
+
+
+app.mount("/static", NoCacheStatic(directory=STATIC), name="static")

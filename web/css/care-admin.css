@@ -1,0 +1,11 @@
+/* Additions on top of Mariam's admin-dashboard.css (kept unchanged). */
+.hidden { display: none !important; }
+html { zoom: 1.15; }  /* larger, easier-to-read text (her sizes are fixed px) */
+/* style.css (her landing-page sheet) centres every .section-heading; undo it on the dashboard */
+.dashboard-main .section-heading { max-width: none; margin: 0 0 24px; text-align: left; }
+.online-dot.amber { background: #ffbe45; box-shadow: 0 0 12px rgba(255, 190, 69, .4); }
+.agent-dot.info { background: #00d9ff; box-shadow: 0 0 10px rgba(0, 217, 255, .5); }
+.agent-dot.danger { background: #ff5277; }
+.cell-sub { display: block; margin-top: 3px; color: #8ea5c2; font-size: 11px; }
+td.mono { font: 11px ui-monospace, Consolas, monospace; color: #00d9ff; overflow-wrap: anywhere; }
+.chart-empty { display: grid; place-items: center; min-height: 260px; padding: 20px; color: #8ea5c2; text-align: center; font-size: 13px; }
